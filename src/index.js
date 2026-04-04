@@ -7,19 +7,18 @@ const app = express()
 
 const port = env.PORT || 3000
 console.log(env)
-app.get('/', (req, res) => {
-  res.send('Task Manager 🙏')
-})
+
+
 
 const startServer = async()=>{
   try{
     await db()
     app.listen(port,()=>{
-      console.log(`🚀 Server running on ${env.BASE_URL}`) 
+      console.log(`Server running on ${env.BASE_URL}`) 
     })
   }
   catch(err){
-    console.log("☠️ Failed to connect to db.")
+    console.log("Failed to connect to db.")
     console.log("Error: ",err.message)
     process.exit(1)
   }

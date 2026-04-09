@@ -5,7 +5,7 @@ import db from "./db/index.js"
 
 const app = express()
 
-const port = env.PORT || 3000
+const port = Number(env.PORT) || 3000
 console.log(env)
 
 

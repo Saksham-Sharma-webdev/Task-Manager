@@ -11,6 +11,17 @@ const envSchema = z.object({
   NODE_ENV: z.string().trim().toLowerCase().refine((val)=>["development","production","test"].includes(val),{
     error: "NODE_ENV must be production, development or test"
   }),
+  MAILTRAP_HOST: z.string().trim(),
+  MAILTRAP_PORT: z
+    .string()
+    .transform(Number)
+    .refine(val => !isNaN(val), {
+      message: "MAILTRAP_PORT must be a number"
+    }),
+  MAILTRAP_USERNAME: z.string().trim(),
+  MAILTRAP_PASSWORD: z.string().trim(),
+  MAILTRAP_SENDERMAIL: z.email() 
+
 });
  
 function createEnv(env){

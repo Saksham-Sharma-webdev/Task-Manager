@@ -9,19 +9,18 @@ const envSchema = z.object({
   BASE_URL: z.url(),
   MONGO_URL: z.url(),
   NODE_ENV: z.string().trim().toLowerCase().refine((val)=>["development","production","test"].includes(val),{
-    error: "NODE_ENV must be production, development or test"
+    error: "Environment must be production, development or test"
   }),
-  MAILTRAP_HOST: z.string().trim(),
-  MAILTRAP_PORT: z
+  SMTP_HOST: z.string().trim(),
+  SMTP_PORT: z
     .string()
     .transform(Number)
     .refine(val => !isNaN(val), {
-      message: "MAILTRAP_PORT must be a number"
+      message: "SMTP_PORT must be a number"
     }),
-  MAILTRAP_USERNAME: z.string().trim(),
-  MAILTRAP_PASSWORD: z.string().trim(),
-  MAILTRAP_SENDERMAIL: z.email() 
-
+  SMTP_USER: z.string().trim(),
+  SMTP_PASS: z.string().trim(),
+  SMTP_SEND: z.email() 
 });
  
 function createEnv(env){

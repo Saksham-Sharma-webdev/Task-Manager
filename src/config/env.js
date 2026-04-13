@@ -20,7 +20,10 @@ const envSchema = z.object({
     }),
   SMTP_USER: z.string().trim(),
   SMTP_PASS: z.string().trim(),
-  SMTP_SEND: z.email() 
+  SMTP_SEND: z.email(),
+  CLOUDINARY_CLOUD_NAME: z.string(),
+  CLOUDINARY_API_KEY: z.string(),
+  CLOUDINARY_API_SECRET: z.string().optional()
 });
  
 function createEnv(env){

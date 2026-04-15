@@ -1,10 +1,10 @@
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
-import { env } from "./config/env.js"
+import env from "./config/env.js"
 import authRouter from "./routes/auth.routes.js"
 
-const app = express.Router()
+const app = express()
 
 
 // middlewares
@@ -27,8 +27,11 @@ app.get('/', (req, res) => {
   res.send('Welcome to Task Manager !')
 })
 
-app.use("api/v1/helathcheck",(req,res)=>{
+app.get("/api/v1/healthcheck",(req,res)=>{
   console.log("Server is in good health.")
 })
 
-app.use("api/v1/auth",authRouter)
+app.use("/api/v1/auth",authRouter)
+
+
+export default app

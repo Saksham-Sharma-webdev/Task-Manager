@@ -3,6 +3,7 @@ import cors from "cors"
 import cookieParser from "cookie-parser"
 import env from "./config/env.js"
 import authRouter from "./routes/auth.routes.js"
+import ApiResponse from "./utils/api-response.js"
 
 const app = express()
 
@@ -29,6 +30,14 @@ app.get('/', (req, res) => {
 
 app.get("/api/v1/healthcheck",(req,res)=>{
   console.log("Server is in good health.")
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        message: "Server is in good health."
+      }
+    )
+  )
 })
 
 app.use("/api/v1/auth",authRouter)

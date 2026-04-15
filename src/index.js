@@ -1,13 +1,10 @@
-import express from "express"
 
-import { env } from "./config/env.js"
+import app from "./app.js"
+import env from "./config/env.js"
 import db from "./db/index.js"
 
-const app = express()
 
 const port = Number(env.PORT) || 3000
-console.log(env)
-
 
 
 const startServer = async()=>{

@@ -7,19 +7,19 @@ const globalErrorHandler = (err, req, res, next) => {
   if (!(error instanceof AppError)) {
     error = new AppError(
       err.statusCode || 500,
-      err.message || "Internal Server Error",
+      "Internal Server Error",
       [],
       err.stack
     );
   }
 
-  console.error(error); // better than console.log
+  console.error(error); 
 
   res.status(error.statusCode || 500).json({
     success: false,
     statusCode: error.statusCode,
     message: error.message || "Internal Server Error",
-    errors: error.error || null,
+    errors: error.error?.length ? error.error : null,
     stack: env.NODE_ENV === "development" ? error.stack : undefined,
   });
 };

@@ -15,6 +15,11 @@ const envSchema = z.object({
     .refine((val) => ["development", "production", "test"].includes(val), {
       message: "Environment must be production, development or test",
     }),
+  ACCESS_TOKEN_SECRET: z.string(),
+  ACCESS_TOKEN_EXPIRY: z.string(),
+  REFRESH_TOKEN_SECRET: z.string(),
+  REFRESH_TOKEN_EXPIRY: z.string(),
+  TEMP_TOKEN_EXPIRY: z.string(),
   SMTP_HOST: z.string().trim(),
   SMTP_PORT: z
     .string()
@@ -35,11 +40,11 @@ function createEnv(env) {
   if (!validationResult.success) {
     const message = validationResult.error.issues.map((e) => e.message);
     console.log(validationResult.error.issues);
-    throw new AppError(500 , "Invalid environment variables", message);
+    throw new AppError(500, "Invalid environment variables", message);
   }
   return validationResult.data; //{success: true,data: {// validated + parsed data}}
 }
 
 const env = createEnv(process.env);
 
-export default env 
+export default env;

@@ -1,24 +1,27 @@
+import env from "../config/env.js";
 import AppError from "../utils/app-error.js";
 
 const globalErrorHandler = (err, req, res, next) => {
-  let error = err
+  let error = err;
 
-  if(!(error instanceof AppError)){
+  if (!(error instanceof AppError)) {
     error = new AppError(
-      err.statusCode|| 500,
+      err.statusCode || 500,
       err.message || "Internal Server Error",
       [],
       err.stack
-    )
+    );
   }
 
-  err && console.log(err)
-  res.status(err.statusCode || 500).json({
-    success: false,
-    statusCode: err.statusCode,
-    message: err.message || "Internal Server Error",
-    errors: err.error || null,
-  });
-}
+  console.error(error); // better than console.log
 
-export default globalErrorHandler
+  res.status(error.statusCode || 500).json({
+    success: false,
+    statusCode: error.statusCode,
+    message: error.message || "Internal Server Error",
+    errors: error.error || null,
+    stack: env.NODE_ENV === "development" ? error.stack : undefined,
+  });
+};
+
+export default globalErrorHandler;

@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser"
 import env from "./config/env.js"
 import authRouter from "./routes/auth.routes.js"
 import ApiResponse from "./utils/api-response.js"
+import globalErrorHandler from "./middlewares/error.middleware.js"
 
 const app = express()
 
@@ -42,5 +43,7 @@ app.get("/api/v1/healthcheck",(req,res)=>{
 
 app.use("/api/v1/auth",authRouter)
 
+
+app.use(globalErrorHandler)
 
 export default app

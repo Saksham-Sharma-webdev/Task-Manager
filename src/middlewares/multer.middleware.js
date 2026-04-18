@@ -4,10 +4,8 @@ import path from "path"
 import AppError from "../utils/app-error.js";
 
 const uploadPath = "./public/images";
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true });
-}
 
+// store the file in the local disk storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadPath);
@@ -20,6 +18,7 @@ const storage = multer.diskStorage({
   },
 });
 
+// filters for saving file
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
@@ -28,6 +27,8 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+
+// Returns a Multer instance that provides several methods for generating middleware that process files uploaded in multipart/form-data format.
 const upload = multer({
   storage,
   fileFilter,
@@ -35,24 +36,24 @@ const upload = multer({
     fileSize: 2 * 1024 * 1024, // 2MB
   },
 });
+// this multer also help to process multipart/form-data
 
+// a fn that takes fileName field and return a middleware that checks, process the image and then store on disk
 const uploadSingle = (fieldName) => {
   return (req, res, next) => {
+
     upload.single(fieldName)(req, res, (err) => {
       if (err) {
         if (err.code === "LIMIT_FILE_SIZE") {
-          return next(new AppError("File size exceeds 2MB", 400));
+          return next(new AppError(400,"File size exceeds 2MB"));
         }
 
-        return next(new AppError(err.message, 400));
-      }
-
-      if (!req.file) {
-        return next(new AppError("Please upload an image", 400));
+        return next(new AppError(400,err.message));
       }
 
       next();
     });
+    
   };
 };
 

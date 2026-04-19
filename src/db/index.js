@@ -10,9 +10,7 @@ const db = async () => {
     console.log("Already connected to db.");
     return;
   }
-  await mongoose.connect(env.MONGO_URL, {
-    dbName: "auth_user",
-  });
+  await mongoose.connect(env.MONGO_URL);
   isConnected = true;
   console.log("Successfully connected to db...");
 };

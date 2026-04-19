@@ -1,113 +1,119 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { AvailableUserRoles, UserRoleEnum } from "../constants/constants.js";
-import {env} from "../config/env.js"
-
+import env from "../config/env.js";
+import bcrypt from "bcryptjs";
+import crypto from "crypto"
 
 const userSchema = new Schema(
   {
-    avatar:{
-      type:{
-        url: String,
-        localPath: String
+    avatar: {
+      url: {
+        type: String,
+        default: "https://res.cloudinary.com/de2duuf9d/image/upload/v1776540373/default_jbscdd.png",
       },
-      default:{
-        url:"",
-        localPath: ""
-      }
+      public_id: {
+        type: String,
+        default: "",
+      },
     },
-    username:{
+    username: {
       type: String,
       required: true,
       lowercase: true,
-      trim: true ,
+      trim: true,
       unique: true,
     },
-    email:{
+    email: {
       type: String,
       required: true,
       lowercase: true,
-      trim: true 
+      trim: true,
     },
-    fullname:{
+    fullname: {
       type: String,
       required: true,
-      trim: true
-    },
-    password:{
-      type: String,
-      required: [true,"password is required"],
       trim: true,
-      select: false 
+    },
+    password: {
+      type: String,
+      required: [true, "password is required"],
+      trim: true,
+      select: false,
     },
     role: {
       type: String,
       enum: AvailableUserRoles,
       default: UserRoleEnum.MEMBER,
-      required: true 
+      required: true,
     },
-    isEmailVerified:{
+    isEmailVerified: {
       type: Boolean,
-      default: false 
+      default: false,
     },
-    forgotPasswordToken:{
-      type: String
+    forgotPasswordToken: {
+      type: String,
     },
-    forgotPasswordExpiry:{
-      type: Date 
+    forgotPasswordExpiry: {
+      type: Date,
     },
-    emailVerificationToken:{
-      type: String
+    emailVerificationToken: {
+      type: String,
     },
-    emailVerificationExpiry:{
-      type: Date 
+    emailVerificationExpiry: {
+      type: Date,
     },
-    refreshToken:{
-      type: String
-    }
+    refreshToken: {
+      type: String,
+    },
   },
-  {timeStamps: true}
-)
+  { timestamps: true },
+);
 
-userSchema.mehods.isPasswordCorrect = async function(password){
-  return await bcrypt.compare(password,this.password)
-}
+userSchema.methods.isPasswordCorrect = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
 
-userSchema.mehods.generateAccessToken = async function(){
-  const payload ={
-    _id: this._id
-  }
+userSchema.methods.generateAccessToken = async function () {
+  const payload = {
+    _id: this._id,
+  };
 
-  return jwt.sign(payload,env.ACCESS_TOKEN_SECRET,{expiresIn:env.ACCESS_TOKEN_EXPIRY})
-}
+  return jwt.sign(payload, env.ACCESS_TOKEN_SECRET, {
+    expiresIn: env.ACCESS_TOKEN_EXPIRY,
+  });
+};
 
-userSchema.mehods.generateRefreshToken = async function(){
-  const payload ={
-    _id: this._id
-  }
+userSchema.methods.generateRefreshToken = async function () {
+  const payload = {
+    _id: this._id,
+  };
 
-  return jwt.sign(payload,env.REFRESH_TOKEN_SECRET,{expiresIn:env.REFRESH_TOKEN_EXPIRY})
-}
+  return jwt.sign(payload, env.REFRESH_TOKEN_SECRET, {
+    expiresIn: env.REFRESH_TOKEN_EXPIRY,
+  });
+};
 
-userSchema.methods.generateTemporaryToken=function(){
-  const unhashedToken = crypto.randomBytes(20).toString("hex")
+userSchema.methods.generateTemporaryToken = function () {
+  const unhashedToken = crypto.randomBytes(20).toString("hex");
 
   const hashedToken = crypto
     .createHash("sha256")
     .update(unhashedToken)
-    .digest("hex")
+    .digest("hex");
 
-  const tokenExpiry = Date.now() +
-  Number(env.TEMP_TOKEN_EXPIRY)
+  
+  const tokenExpiry = new Date(Date.now() + Number(env.TEMP_TOKEN_EXPIRY));
+  
 
-  return { unhashedToken, hashedToken, tokenExpiry}
-}
+  return { unhashedToken, hashedToken, tokenExpiry };
+};
 
-userSchema.pre("save",async function(){
-  if(this.isModified("password")){
-    this.password = await bcrypt.hash(this.password,10)
+userSchema.pre("save", async function () {
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10);
   }
-})
+});
 
-const User = mongoose.model("User",userSchema)
+const User = mongoose.model("User", userSchema);
 
-export default User
+export default User;

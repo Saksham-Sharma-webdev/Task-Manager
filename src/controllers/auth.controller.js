@@ -8,7 +8,8 @@ import User from "../models/user.model.js";
 import ApiResponse from "../utils/api-response.js";
 import AppError from "../utils/app-error.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import fs from 'fs'
+import fs from "fs";
+import crypto from "crypto"
 
 const registerUser = asyncHandler(async (req, res) => {
   // take username, email, fullname, password from req.body
@@ -58,11 +59,11 @@ const registerUser = asyncHandler(async (req, res) => {
       username,
       email,
       fullname,
-      password
+      password,
     });
-    if(profilePicUrl){
-      user.avatar.url = profilePicUrl
-      user.avatar.public_id = profilePicPublicId || null
+    if (profilePicUrl) {
+      user.avatar.url = profilePicUrl;
+      user.avatar.public_id = profilePicPublicId || null;
     }
   } catch (err) {
     if (profilePicPublicId) {
@@ -83,6 +84,7 @@ const registerUser = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   const verificationUrl = `${env.BASE_URL}/api/v1/auth/verify-email/${unhashedToken}`;
+  console.log(verificationUrl)
   let emailInfoId = null;
   try {
     emailInfoId = await sendMail({
@@ -109,7 +111,55 @@ const registerUser = asyncHandler(async (req, res) => {
   );
 });
 
-const verifyEmail = asyncHandler(async (req, res) => {});
+const verifyEmail = asyncHandler(async (req, res) => {
+  // take the token from the user
+  // hash the token
+  // find the user with same verTOken
+  // check the expiry in db
+  // if everything right then make isVerified true
+  // make the token and expiry field null in db
+  // save the user
+
+  const { emailVerToken } = req.params;
+
+  if (!emailVerToken) {
+    throw new AppError(400, "Verification token is required.");
+  }
+
+  const hashedEmailVerToken = crypto
+    .createHash("sha256")
+    .update(emailVerToken)
+    .digest("hex");
+
+  const user = await User.findOne({
+    emailVerificationToken: hashedEmailVerToken
+  })
+
+  if(!user){
+    throw new AppError(400, "Invalid verification token.")
+  }
+
+  if (user.emailVerificationExpiry < Date.now()) {
+    throw new AppError(400, "Verification token expired.");
+  }
+  
+  user.isEmailVerified = true
+  user.emailVerificationExpiry = undefined
+  user.emailVerificationToken = undefined
+
+  await user.save()
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        username: user.username,
+        isEmailVerified: user.isEmailVerified
+      },
+      "Email Verified successfully."
+    )
+  )
+});
 
 const resendVerifyEmail = asyncHandler(async (req, res) => {});
 

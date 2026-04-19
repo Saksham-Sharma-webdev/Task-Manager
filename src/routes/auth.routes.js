@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { userRegValidator } from "../validators/auth.validators.js";
 import validate from "../middlewares/validator.middleware.js";
-import { registerUser } from "../controllers/auth.controller.js";
+import { registerUser, verifyEmail } from "../controllers/auth.controller.js";
 import uploadSingle from "../middlewares/multer.middleware.js";
 
 const authRouter = Router()
@@ -15,9 +15,9 @@ authRouter
     registerUser
   )
 
-// authRouter
-//   .route("/verify-email/:emailVerToken")
-//   .get()
+authRouter
+  .route("/verify-email/:emailVerToken")
+  .get(verifyEmail)
 
 // authRouter
 //   .route("/resend-verification-email")

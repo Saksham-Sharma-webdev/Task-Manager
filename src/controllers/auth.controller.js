@@ -9,7 +9,7 @@ import ApiResponse from "../utils/api-response.js";
 import AppError from "../utils/app-error.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import fs from "fs";
-import crypto from "crypto"
+import crypto from "crypto";
 import ms from "ms";
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -85,7 +85,7 @@ const registerUser = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   const verificationUrl = `${env.BASE_URL}/api/v1/auth/verify-email/${unhashedToken}`;
-  console.log(verificationUrl)
+  console.log(verificationUrl);
   let emailInfoId = null;
   try {
     emailInfoId = await sendMail({
@@ -133,33 +133,33 @@ const verifyEmail = asyncHandler(async (req, res) => {
     .digest("hex");
 
   const user = await User.findOne({
-    emailVerificationToken: hashedEmailVerToken
-  })
+    emailVerificationToken: hashedEmailVerToken,
+  });
 
-  if(!user){
-    throw new AppError(400, "Invalid verification token.")
+  if (!user) {
+    throw new AppError(400, "Invalid verification token.");
   }
 
   if (user.emailVerificationExpiry < Date.now()) {
     throw new AppError(400, "Verification token expired.");
   }
-  
-  user.isEmailVerified = true
-  user.emailVerificationExpiry = undefined
-  user.emailVerificationToken = undefined
 
-  await user.save()
+  user.isEmailVerified = true;
+  user.emailVerificationExpiry = undefined;
+  user.emailVerificationToken = undefined;
+
+  await user.save();
 
   return res.status(200).json(
     new ApiResponse(
       200,
       {
         username: user.username,
-        isEmailVerified: user.isEmailVerified
+        isEmailVerified: user.isEmailVerified,
       },
-      "Email Verified successfully."
-    )
-  )
+      "Email Verified successfully.",
+    ),
+  );
 });
 
 const resendVerifyEmail = asyncHandler(async (req, res) => {
@@ -170,50 +170,57 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
   // hash the password
   // match the password
   // check if email already verified
+  // check if there is already a valid token in db
   // create a email ver token and expiry
   // store the hashed token and expiry to db
   // save the user
   // create a verification email with the unhashed token and send email
 
-  const {email, password} = req.body
+  const { email, password } = req.body;
 
   const user = await User.findOne({
-    email 
-  }).select("+password")
+    email,
+  }).select("+password");
 
-  if(!user){
-    throw new AppError(400, "Invalid email or password.")
+  if (!user) {
+    throw new AppError(400, "Invalid email or password.");
   }
 
-  const matchPassword = await user.isPasswordCorrect(password)
+  const matchPassword = await user.isPasswordCorrect(password);
 
-  if(!matchPassword){
-    throw new AppError(400, "Invalid email or password.")
+  if (!matchPassword) {
+    throw new AppError(400, "Invalid email or password.");
   }
 
-  if(user.isEmailVerified){
+  if (user.isEmailVerified) {
     return res.status(200).json(
       new ApiResponse(
         200,
         {
-          email: user.enail,
-          isEmailVerified: user.isEmailVerified
+          email: user.email,
+          isEmailVerified: user.isEmailVerified,
         },
-        "Email already verified."
-      )
-    )
+        "Email already verified.",
+      ),
+    );
   }
 
-  const { unhashedToken, hashedToken, tokenExpiry } = user.generateTemporaryToken()
+  if (
+    user.emailVerificationExpiry &&
+    user.emailVerificationExpiry > Date.now()
+  ) {
+    throw new AppError(429, "Verification email already sent. Please wait.");
+  }
 
-  user.emailVerificationExpiry = tokenExpiry
-  user.emailVerificationToken = hashedToken
+  const { unhashedToken, hashedToken, tokenExpiry } =
+    user.generateTemporaryToken();
 
-  await user.save({validateBeforeSave: false})
+  user.emailVerificationExpiry = tokenExpiry;
+  user.emailVerificationToken = hashedToken;
+
+  await user.save({ validateBeforeSave: false });
 
   const verificationUrl = `${env.BASE_URL}/api/v1/auth/verify-email/${unhashedToken}`;
-
-  console.log(verificationUrl)
 
   let emailInfoId = null;
   try {
@@ -227,9 +234,9 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
     throw new AppError(500, "Verification email failed.");
   }
 
-  return res.status(201).json(
+  return res.status(200).json(
     new ApiResponse(
-      201,
+      200,
       {
         username: user.username,
         email: user.email,
@@ -240,7 +247,6 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
         : "User registered successfully. But failed to send verification email. Please resend verification email.",
     ),
   );
-
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -254,53 +260,50 @@ const loginUser = asyncHandler(async (req, res) => {
   // create a jwt accessT
   // sign the jwt accessT
   // same for refreshT
-  // save the refreshT to db
+  // save the hashedrefreshT to db
   // save both to the cookies with options
 
-  const {identifier, password} = req.body
-  
+  const { identifier, password } = req.body;
+
   const user = await User.findOne({
-    $or: [
-      {email: identifier},
-      {username: identifier}
-    ]
-  }).select("+password")
+    $or: [{ email: identifier }, { username: identifier }],
+  }).select("+password +refreshToken");
 
-  if(!user){
-    throw new AppError(400, "Invalid credentials.")
-  }
-  console.log(user)
-  const matchPassword = await user.isPasswordCorrect(password)
-
-  if(!matchPassword){
-    throw new AppError(400, "Invalid email or password.")
+  if (!user) {
+    throw new AppError(401, "Invalid credentials.");
   }
 
-  if(!user.isEmailVerified){
-    throw new AppError(400, "Email is not verified.")
+  const matchPassword = await user.isPasswordCorrect(password);
+
+  if (!matchPassword) {
+    throw new AppError(401, "Invalid credentials.");
   }
 
-  const accessToken = user.generateAccessToken()
-  const refreshToken = user.generateRefreshToken()
+  if (!user.isEmailVerified) {
+    throw new AppError(400, "Email is not verified.");
+  }
 
-  user.refreshToken = refreshToken
-  await user.save({validateBeforeSave: false})
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  await user.save({ validateBeforeSave: false });
 
   const cookieOptions = {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
-    sameSite: "strict"
-  }
+    sameSite: "strict",
+  };
 
-  res.cookie("accessToken",accessToken, {
+  res.cookie("accessToken", accessToken, {
     ...cookieOptions,
-    maxAge: ms(env.ACCESS_TOKEN_EXPIRY)
-  })
+    maxAge: ms(env.ACCESS_TOKEN_EXPIRY),
+  });
 
   res.cookie("refreshToken", refreshToken, {
     ...cookieOptions,
-    maxAge: ms(env.REFRESH_TOKEN_EXPIRY)
-  })
+    maxAge: ms(env.REFRESH_TOKEN_EXPIRY),
+  });
 
   return res.status(200).json(
     new ApiResponse(
@@ -308,12 +311,11 @@ const loginUser = asyncHandler(async (req, res) => {
       {
         id: user._id,
         username: user.username,
-        email: user.email
+        email: user.email,
       },
-      "User loggedIn successfully."
-    )
-  )
-
+      "User loggedIn successfully.",
+    ),
+  );
 });
 
 const getProfile = asyncHandler(async (req, res) => {});

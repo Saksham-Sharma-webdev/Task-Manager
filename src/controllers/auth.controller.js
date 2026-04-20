@@ -250,6 +250,7 @@ const loginUser = asyncHandler(async (req, res) => {
   // find the user based on the identifier $or db querry
   // check if user exist ?
   // hash and match the password ?
+  // check if user email verified
   // create a jwt accessT
   // sign the jwt accessT
   // same for refreshT
@@ -273,6 +274,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if(!matchPassword){
     throw new AppError(400, "Invalid email or password.")
+  }
+
+  if(!user.isEmailVerified){
+    throw new AppError(400, "Email is not verified.")
   }
 
   const accessToken = user.generateAccessToken()

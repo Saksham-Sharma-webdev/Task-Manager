@@ -10,6 +10,7 @@ import AppError from "../utils/app-error.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import fs from "fs";
 import crypto from "crypto"
+import ms from "ms";
 
 const registerUser = asyncHandler(async (req, res) => {
   // take username, email, fullname, password from req.body
@@ -242,7 +243,73 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
 
 });
 
-const loginUser = asyncHandler(async (req, res) => {});
+const loginUser = asyncHandler(async (req, res) => {
+  // take identifier(email or username) from user
+  // take password from user
+  // validated by mw
+  // find the user based on the identifier $or db querry
+  // check if user exist ?
+  // hash and match the password ?
+  // create a jwt accessT
+  // sign the jwt accessT
+  // same for refreshT
+  // save the refreshT to db
+  // save both to the cookies with options
+
+  const {identifier, password} = req.body
+  
+  const user = await User.findOne({
+    $or: [
+      {email: identifier},
+      {username: identifier}
+    ]
+  }).select("+password")
+
+  if(!user){
+    throw new AppError(400, "Invalid credentials.")
+  }
+  console.log(user)
+  const matchPassword = await user.isPasswordCorrect(password)
+
+  if(!matchPassword){
+    throw new AppError(400, "Invalid email or password.")
+  }
+
+  const accessToken = user.generateAccessToken()
+  const refreshToken = user.generateRefreshToken()
+
+  user.refreshToken = refreshToken
+  await user.save({validateBeforeSave: false})
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: env.NODE_ENV === "production",
+    sameSite: "strict"
+  }
+
+  res.cookie("accessToken",accessToken, {
+    ...cookieOptions,
+    maxAge: ms(env.ACCESS_TOKEN_EXPIRY)
+  })
+
+  res.cookie("refreshToken", refreshToken, {
+    ...cookieOptions,
+    maxAge: ms(env.REFRESH_TOKEN_EXPIRY)
+  })
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        id: user._id,
+        username: user.username,
+        email: user.email
+      },
+      "User loggedIn successfully."
+    )
+  )
+
+});
 
 const getProfile = asyncHandler(async (req, res) => {});
 

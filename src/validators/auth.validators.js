@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, oneOf } from "express-validator";
 
 const emailValidator = (field) => {
   return [
@@ -69,7 +69,24 @@ const userReVerEmailValidator = ()=>{
   ]
 }
 
+// look at the one field called 'identifier' try to validate it as an email if that fails try to validate that same 'identifier' field as a username
+// oneOf works like or here 
+const userLoginValidator = ()=>{
+  return[
+
+    oneOf([
+      ...emailValidator("identifier"), 
+      ...usernameValidator("identifier")
+    ], {
+      message: "Identification must be a valid email or username."
+    }),
+
+    ...passwordValidator("password")
+  ]
+}
+
 export {
   userRegValidator,
-  userReVerEmailValidator
+  userReVerEmailValidator,
+  userLoginValidator
 }

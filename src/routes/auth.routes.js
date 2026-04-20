@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { userRegValidator, userReVerEmailValidator } from "../validators/auth.validators.js";
+import { userLoginValidator, userRegValidator, userReVerEmailValidator } from "../validators/auth.validators.js";
 import validate from "../middlewares/validator.middleware.js";
-import { registerUser, resendVerifyEmail, verifyEmail } from "../controllers/auth.controller.js";
+import { loginUser, registerUser, resendVerifyEmail, verifyEmail } from "../controllers/auth.controller.js";
 import uploadSingle from "../middlewares/multer.middleware.js";
 
 const authRouter = Router()
@@ -27,9 +27,13 @@ authRouter
     resendVerifyEmail
   )
 
-// authRouter
-//   .route("/login")
-//   .post()
+authRouter
+  .route("/login")
+  .post(
+    userLoginValidator(),
+    validate,
+    loginUser
+  )
 
 // authRouter
 //   .route("/profile")

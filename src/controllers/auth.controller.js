@@ -161,7 +161,86 @@ const verifyEmail = asyncHandler(async (req, res) => {
   )
 });
 
-const resendVerifyEmail = asyncHandler(async (req, res) => {});
+const resendVerifyEmail = asyncHandler(async (req, res) => {
+  // take email, password from the user
+  // validated by mw
+  // find user on basis of email
+  // check if user exist
+  // hash the password
+  // match the password
+  // check if email already verified
+  // create a email ver token and expiry
+  // store the hashed token and expiry to db
+  // save the user
+  // create a verification email with the unhashed token and send email
+
+  const {email, password} = req.body
+
+  const user = await User.findOne({
+    email 
+  }).select("+password")
+
+  if(!user){
+    throw new AppError(400, "Invalid email or password.")
+  }
+
+  const matchPassword = user.isPasswordCorrect(password)
+
+  if(!matchPassword){
+    throw new AppError(400, "Invalid email or password.")
+  }
+
+  if(user.isEmailVerified){
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          email: user.enail,
+          isEmailVerified: user.isEmailVerified
+        },
+        "Email already verified."
+      )
+    )
+  }
+
+  const { unhashedToken, hashedToken, tokenExpiry } = user.generateTemporaryToken()
+
+  user.emailVerificationExpiry = tokenExpiry
+  user.emailVerificationToken = hashedToken
+
+  await user.save({validateBeforeSave: false})
+
+  const verificationUrl = `${env.BASE_URL}/api/v1/auth/verify-email/${unhashedToken}`;
+
+  console.log(verificationUrl)
+
+  let emailInfoId = null;
+  try {
+    emailInfoId = await sendMail({
+      email: user.email,
+      mailGenContent: emailVerifyGenContent(user.fullname, verificationUrl),
+      subject: "To verify your email.",
+    });
+  } catch (err) {
+    console.log("Failed sending email: ", err.message);
+    throw new AppError(500, "Verification email failed.");
+  }
+
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      {
+        username: user.username,
+        email: user.email,
+        fullname: user.fullname,
+      },
+      emailInfoId
+        ? "User registered successfully. Check your email to verify"
+        : "User registered successfully. But failed to send verification email. Please resend verification email.",
+    ),
+  );
+
+});
 
 const loginUser = asyncHandler(async (req, res) => {});
 

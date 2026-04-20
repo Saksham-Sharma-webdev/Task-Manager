@@ -62,6 +62,14 @@ const userRegValidator = () => {
   ];
 };
 
+const userReVerEmailValidator = ()=>{
+  return[
+    ...emailValidator('email'),
+    ...passwordValidator('password')
+  ]
+}
+
 export {
-  userRegValidator
+  userRegValidator,
+  userReVerEmailValidator
 }

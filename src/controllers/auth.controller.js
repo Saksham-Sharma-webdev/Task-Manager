@@ -185,7 +185,7 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
     throw new AppError(400, "Invalid email or password.")
   }
 
-  const matchPassword = user.isPasswordCorrect(password)
+  const matchPassword = await user.isPasswordCorrect(password)
 
   if(!matchPassword){
     throw new AppError(400, "Invalid email or password.")

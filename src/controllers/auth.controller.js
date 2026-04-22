@@ -17,7 +17,8 @@ const registerUser = asyncHandler(async (req, res) => {
   // already validated using MW
   // check if user already exist by email or username
   // if existing user abort req and delete uploaded img from disk
-  // if profile pic path exist upload img on cloudinary
+  // otw if profile pic path exist upload img on cloudinary
+  // after upload delete the local file
   // create user
   // add avatar prop only if profile pic url exist
   // hash password (will be done while saving the password)
@@ -25,6 +26,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // save the hashed token to db
   // set emailToken expiry
   // save the user
+  // delete image from cloudinary if any error come during save db
   // send the verification email with email verification token
 
   const { username, email, fullname, password } = req.body;
@@ -40,12 +42,15 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new AppError(409, "Email or username already registered.");
   }
 
-  let profilePicUrl = "";
-  let profilePicPublicId = "";
+  let profilePicUrl = null;
+  let profilePicPublicId = null;
 
   if (req.file?.path) {
-    const response = await uploadOnCloudinary(req.file.path);
-
+    const localFilePath =req.file.path
+    const response = await uploadOnCloudinary(localFilePath);
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
     if (response) {
       profilePicUrl = response.secure_url;
       profilePicPublicId = response.public_id;
@@ -55,17 +60,35 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   let user;
+  let unhashedToken;
   try {
-    user = await User.create({
+    const userData = {
       username,
       email,
       fullname,
       password,
-    });
+    };
+
     if (profilePicUrl) {
-      user.avatar.url = profilePicUrl;
-      user.avatar.public_id = profilePicPublicId || null;
+      userData.avatar = {
+        url: profilePicUrl,
+        public_id: profilePicPublicId,
+      };
     }
+
+    user = await User.create(userData)
+
+    const tokenData =
+      user.generateTemporaryToken();
+
+    unhashedToken = tokenData.unhashedToken
+
+    user.emailVerificationToken = tokenData.hashedToken;
+    user.emailVerificationExpiry = tokenData.tokenExpiry;
+  
+    
+    await user.save({ validateBeforeSave: false });
+
   } catch (err) {
     if (profilePicPublicId) {
       try {
@@ -77,15 +100,10 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new AppError(500, "User creation failed.");
   }
 
-  const { unhashedToken, hashedToken, tokenExpiry } =
-    user.generateTemporaryToken();
-  user.emailVerificationToken = hashedToken;
-  user.emailVerificationExpiry = tokenExpiry;
-
-  await user.save({ validateBeforeSave: false });
-
   const verificationUrl = `${env.BASE_URL}/api/v1/auth/verify-email/${unhashedToken}`;
+
   console.log(verificationUrl);
+  
   let emailInfoId = null;
   try {
     emailInfoId = await sendMail({
@@ -140,7 +158,14 @@ const verifyEmail = asyncHandler(async (req, res) => {
     throw new AppError(400, "Invalid verification token.");
   }
 
-  if (user.emailVerificationExpiry < Date.now()) {
+  if(user.isEmailVerified){
+    throw new AppError(400,"Email is already verified.")
+  }
+
+  if (
+    !user.emailVerificationExpiry ||
+    user.emailVerificationExpiry.getTime() < Date.now()
+  ) {
     throw new AppError(400, "Verification token expired.");
   }
 
@@ -183,13 +208,13 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
   }).select("+password");
 
   if (!user) {
-    throw new AppError(400, "Invalid email or password.");
+    throw new AppError(401, "Invalid email or password.");
   }
 
   const matchPassword = await user.isPasswordCorrect(password);
 
   if (!matchPassword) {
-    throw new AppError(400, "Invalid email or password.");
+    throw new AppError(401, "Invalid email or password.");
   }
 
   if (user.isEmailVerified) {
@@ -230,7 +255,10 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
       subject: "To verify your email.",
     });
   } catch (err) {
-    console.log("Failed sending email: ", err.message);
+    user.emailVerificationExpiry = undefined;
+    user.emailVerificationToken = undefined;
+
+    await user.save({ validateBeforeSave: false });
     throw new AppError(500, "Verification email failed.");
   }
 

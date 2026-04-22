@@ -32,7 +32,6 @@ const usernameValidator = (field) => {
   return [
     body(field)
       .trim()
-      .toLowerCase() 
       .notEmpty()
       .withMessage("Username is required")
       .bail()

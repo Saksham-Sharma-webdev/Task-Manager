@@ -4,6 +4,7 @@ import env from "../config/env.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto"
 import jwt from "jsonwebtoken"
+import ms from "ms"
 
 const userSchema = new Schema(
   {
@@ -80,7 +81,7 @@ userSchema.methods.isRefreshTokenMatch = async function (refreshToken) {
   return await bcrypt.compare(refreshToken, this.refreshToken);
 };
 
-userSchema.methods.generateAccessToken = async function () {
+userSchema.methods.generateAccessToken =  function () {
   const payload = {
     _id: this._id,
   };
@@ -90,7 +91,7 @@ userSchema.methods.generateAccessToken = async function () {
   });
 };
 
-userSchema.methods.generateRefreshToken = async function () {
+userSchema.methods.generateRefreshToken =  function () {
   const payload = {
     _id: this._id,
   };
@@ -109,7 +110,7 @@ userSchema.methods.generateTemporaryToken = function () {
     .digest("hex");
 
   
-  const tokenExpiry = new Date(Date.now() + Number(env.TEMP_TOKEN_EXPIRY));
+  const tokenExpiry = new Date(Date.now() + ms(env.TEMP_TOKEN_EXPIRY));
   
 
   return { unhashedToken, hashedToken, tokenExpiry };

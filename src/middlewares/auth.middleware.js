@@ -14,7 +14,7 @@ const verifyAccessToken = async (accessToken) => {
   const decodedAccessToken = jwt.verify(accessToken, env.ACCESS_TOKEN_SECRET);
 
   const user = await User.findById(decodedAccessToken._id).select(
-    "_id username email fullname isEmailVerified role createdAt",
+    "_id username email fullname isEmailVerified role createdAt avatar",
   );
 
   if (!user) {
@@ -41,7 +41,7 @@ const verifyRefreshToken = async (refreshToken) => {
   }
 
   const user = await User.findById(decodedRefreshToken._id)
-    .select("_id username email fullname isEmailVerified role createdAt")
+    .select("_id username email fullname isEmailVerified role createdAt avatar")
     .select(" +refreshToken");
 
   if (!user) {
@@ -122,7 +122,6 @@ const isLoggedIn = asyncHandler(async (req, res, next) => {
     res.clearCookie("refreshToken");
     throw new AppError(401, "Invalid or expired token.");
   }
-
   const data = {
     id: user._id,
     fullName: user.fullname,
@@ -131,6 +130,7 @@ const isLoggedIn = asyncHandler(async (req, res, next) => {
     isEmailVerified: user.isEmailVerified,
     role: user.role,
     createdAt: user.createdAt,
+    avatarUrl: user.avatar?.url || null
   };
   req.user = data;
 

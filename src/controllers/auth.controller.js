@@ -46,7 +46,7 @@ const registerUser = asyncHandler(async (req, res) => {
   let profilePicPublicId = null;
 
   if (req.file?.path) {
-    const localFilePath =req.file.path
+    const localFilePath = req.file.path;
     const response = await uploadOnCloudinary(localFilePath);
     if (fs.existsSync(localFilePath)) {
       fs.unlinkSync(localFilePath);
@@ -76,19 +76,16 @@ const registerUser = asyncHandler(async (req, res) => {
       };
     }
 
-    user = await User.create(userData)
+    user = await User.create(userData);
 
-    const tokenData =
-      user.generateTemporaryToken();
+    const tokenData = user.generateTemporaryToken();
 
-    unhashedToken = tokenData.unhashedToken
+    unhashedToken = tokenData.unhashedToken;
 
     user.emailVerificationToken = tokenData.hashedToken;
     user.emailVerificationExpiry = tokenData.tokenExpiry;
-  
-    
-    await user.save({ validateBeforeSave: false });
 
+    await user.save({ validateBeforeSave: false });
   } catch (err) {
     if (profilePicPublicId) {
       try {
@@ -103,7 +100,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const verificationUrl = `${env.BASE_URL}/api/v1/auth/verify-email/${unhashedToken}`;
 
   console.log(verificationUrl);
-  
+
   let emailInfoId = null;
   try {
     emailInfoId = await sendMail({
@@ -158,8 +155,8 @@ const verifyEmail = asyncHandler(async (req, res) => {
     throw new AppError(400, "Invalid verification token.");
   }
 
-  if(user.isEmailVerified){
-    throw new AppError(400,"Email is already verified.")
+  if (user.isEmailVerified) {
+    throw new AppError(400, "Email is already verified.");
   }
 
   if (
@@ -311,6 +308,10 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new AppError(400, "Email is not verified.");
   }
 
+  if (user.refreshToken) {
+    user.refreshToken = null;
+  }
+
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
@@ -346,7 +347,15 @@ const loginUser = asyncHandler(async (req, res) => {
   );
 });
 
-const getProfile = asyncHandler(async (req, res) => {});
+const getProfile = asyncHandler(async (req, res) => {
+  // take userData from req.user
+  // return userData
+
+  const profile = req.user;
+  return res
+    .status(200)
+    .json(new ApiResponse(200, profile, "User profile sent successfully."));
+});
 
 const logoutUser = asyncHandler(async (req, res) => {});
 

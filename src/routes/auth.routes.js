@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { userLoginValidator, userRegValidator, userReVerEmailValidator } from "../validators/auth.validators.js";
 import validate from "../middlewares/validator.middleware.js";
-import { loginUser, registerUser, resendVerifyEmail, verifyEmail } from "../controllers/auth.controller.js";
+import { getProfile, loginUser, registerUser, resendVerifyEmail, verifyEmail } from "../controllers/auth.controller.js";
 import uploadSingle from "../middlewares/multer.middleware.js";
+import { isLoggedIn } from "../middlewares/auth.middleware.js";
 
 const authRouter = Router()
 
@@ -35,9 +36,12 @@ authRouter
     loginUser
   )
 
-// authRouter
-//   .route("/profile")
-//   .get()
+authRouter
+  .route("/profile")
+  .get(
+    isLoggedIn,
+    getProfile
+  )
 
 // authRouter
 //   .route("/logout")

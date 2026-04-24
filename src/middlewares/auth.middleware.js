@@ -90,6 +90,12 @@ const isLoggedIn = asyncHandler(async (req, res, next) => {
 
   const { accessToken: accessT, refreshToken: refreshT } = req.cookies;
 
+  const cookieOptions = {
+    httpOnly: true,
+    secure: env.NODE_ENV === "production",
+    sameSite: "strict",
+  };
+
   if (!accessT && !refreshT) {
     throw new AppError(401, "Unauthorised access. No tokens present.");
   }
@@ -99,8 +105,8 @@ const isLoggedIn = asyncHandler(async (req, res, next) => {
       user = await verifyAccessToken(accessT);
     } catch (err) {
       if (!refreshT || !(err instanceof jwt.TokenExpiredError)) {
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
+        res.clearCookie("accessToken",cookieOptions);
+        res.clearCookie("refreshToken",cookieOptions);
         throw new AppError(401, "Invalid or expired token.");
       }
       const result = await verifyRefreshToken(refreshT);
@@ -118,8 +124,8 @@ const isLoggedIn = asyncHandler(async (req, res, next) => {
   }
 
   if (!user) {
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken",cookieOptions);
     throw new AppError(401, "Invalid or expired token.");
   }
   const data = {

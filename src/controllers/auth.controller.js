@@ -167,8 +167,8 @@ const verifyEmail = asyncHandler(async (req, res) => {
   }
 
   user.isEmailVerified = true;
-  user.emailVerificationExpiry = undefined;
-  user.emailVerificationToken = undefined;
+  user.emailVerificationExpiry = null;
+  user.emailVerificationToken = null;
 
   await user.save();
 
@@ -252,8 +252,8 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
       subject: "To verify your email.",
     });
   } catch (err) {
-    user.emailVerificationExpiry = undefined;
-    user.emailVerificationToken = undefined;
+    user.emailVerificationExpiry = null;
+    user.emailVerificationToken = null;
 
     await user.save({ validateBeforeSave: false });
     throw new AppError(500, "Verification email failed.");
@@ -357,7 +357,34 @@ const getProfile = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, profile, "User profile sent successfully."));
 });
 
-const logoutUser = asyncHandler(async (req, res) => {});
+const logoutUser = asyncHandler(async (req, res) => {
+  // find user based on the req.user
+  // in db make refreshToken to null
+  // save db
+  // now clear cookies refreshT and accessT
+
+  const user = await User.findById(req.user.id)
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: env.NODE_ENV === "production",
+    sameSite: "strict"
+  };
+
+  res.clearCookie("accessToken", cookieOptions)
+  res.clearCookie("refreshToken", cookieOptions)
+  
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        id: user.id,
+        username: user.username
+      },
+      "User logged out successfully."
+    )
+  )
+});
 
 const forgotPassword = asyncHandler(async (req, res) => {});
 

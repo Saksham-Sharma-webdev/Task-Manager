@@ -351,16 +351,6 @@ const loginUser = asyncHandler(async (req, res) => {
   );
 });
 
-const getProfile = asyncHandler(async (req, res) => {
-  // take userData from req.user
-  // return userData
-
-  const profile = req.user;
-  return res
-    .status(200)
-    .json(new ApiResponse(200, profile, "User profile sent successfully."));
-});
-
 const logoutUser = asyncHandler(async (req, res) => {
   // find user based on the req.user
   // in db make refreshToken to null
@@ -517,7 +507,6 @@ export {
   verifyEmail,
   resendVerifyEmail,
   loginUser,
-  getProfile,
   logoutUser,
   forgotPassword,
   resetPassword

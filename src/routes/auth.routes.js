@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { forgotPasswordValidator, resetPasswordValidator, userLoginValidator, userRegValidator, userReVerEmailValidator } from "../validators/auth.validators.js";
 import validate from "../middlewares/validator.middleware.js";
-import { forgotPassword, getProfile, loginUser, logoutUser, registerUser, resendVerifyEmail, resetPassword, verifyEmail } from "../controllers/auth.controller.js";
+import { forgotPassword, loginUser, logoutUser, registerUser, resendVerifyEmail, resetPassword, verifyEmail } from "../controllers/auth.controller.js";
 import uploadSingle from "../middlewares/multer.middleware.js";
 import { isLoggedIn } from "../middlewares/auth.middleware.js";
 
@@ -34,13 +34,6 @@ authRouter
     userLoginValidator(),
     validate,
     loginUser
-  )
-
-authRouter
-  .route("/profile")
-  .get(
-    isLoggedIn,
-    getProfile
   )
 
 authRouter

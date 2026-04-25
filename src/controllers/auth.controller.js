@@ -3,7 +3,7 @@ import {
   deleteFromCloudinary,
 } from "../config/cloudinary.js";
 import env from "../config/env.js";
-import { emailVerifyGenContent, sendMail } from "../config/mail.js";
+import { emailVerifyGenContent, passwordResetGenContent, sendMail } from "../config/mail.js";
 import User from "../models/user.model.js";
 import ApiResponse from "../utils/api-response.js";
 import AppError from "../utils/app-error.js";
@@ -167,8 +167,8 @@ const verifyEmail = asyncHandler(async (req, res) => {
   }
 
   user.isEmailVerified = true;
-  user.emailVerificationExpiry = null;
-  user.emailVerificationToken = null;
+  user.emailVerificationExpiry = undefined;
+  user.emailVerificationToken = undefined;
 
   await user.save();
 
@@ -252,8 +252,8 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
       subject: "To verify your email.",
     });
   } catch (err) {
-    user.emailVerificationExpiry = null;
-    user.emailVerificationToken = null;
+    user.emailVerificationExpiry = undefined;
+    user.emailVerificationToken = undefined;
 
     await user.save({ validateBeforeSave: false });
     throw new AppError(500, "Verification email failed.");
@@ -268,7 +268,7 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
         fullname: user.fullname,
       },
       emailInfoId
-        ? "User registered successfully. Check your email to verify"
+        ? "Registration email sent successfully. Check your email to verify"
         : "User registered successfully. But failed to send verification email. Please resend verification email.",
     ),
   );
@@ -309,7 +309,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   if (user.refreshToken) {
-    user.refreshToken = null;
+    user.refreshToken = undefined;
   }
 
   const accessToken = user.generateAccessToken();
@@ -386,9 +386,124 @@ const logoutUser = asyncHandler(async (req, res) => {
   )
 });
 
-const forgotPassword = asyncHandler(async (req, res) => {});
+const forgotPassword = asyncHandler(async (req, res) => {
+  // take the email and username (identifier)
+  // validated by mw
+  // find user based on identifier 
+  // create a reset password temp token 
+  // set expiry
+  // hash and save to db
+  // send it with email to user 
 
-const resetPassword = asyncHandler(async (req, res) => {});
+  const {identifier} = req.body
+
+  const user = await User.findOne({
+    $or: [
+      {email: identifier},
+      {username: identifier}
+    ]
+  })
+
+  if(!user){
+    return res.status(200).json(
+    new ApiResponse(
+      200,
+      {},
+      "If the account exists, a reset link has been sent."
+    )
+  );
+  }
+
+  const { unhashedToken, hashedToken, tokenExpiry } = user.generateTemporaryToken()
+
+  user.passwordResetToken = hashedToken
+  user.passwordResetExpires = tokenExpiry
+
+  await user.save({validateBeforeSave: false})
+
+  const resetPasswordUrl = `${env.BASE_URL}/api/v1/auth/reset-password/${unhashedToken}`;
+
+  try{
+    await sendMail({
+      email: user.email,
+      mailGenContent: passwordResetGenContent(user.fullname, resetPasswordUrl),
+      subject: "To reset your password."
+    })
+  }
+  catch(err){
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    console.log("forgot password email failed: ",err)
+
+    await user.save()
+    throw new AppError(500, "Reset password email failed.")
+  }
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {},
+      "If the account exists, a reset link has been sent."
+    )
+  );
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  // take the resetPassToken from the params ?
+  // take the new password and confirmed new password from body
+  // check if new and confirmed new matches
+  // hash the resetPassToken 
+  // find user based on the resetPassToken ?
+  // check resetpass expiry ?
+  // store the new password to db
+  // save db
+
+  const {passwordResetToken} = req.params
+  const {newPassword, confirmNewPassword} = req.body
+
+  if(!passwordResetToken){
+    throw new AppError(400, "No reset token found.")
+  }
+
+  if(newPassword !== confirmNewPassword){
+    throw new AppError(400, "New password should match the confirmed new password.")
+  }
+
+  const hashedPasswordResetToken = crypto
+      .createHash("sha256")
+      .update(passwordResetToken)
+      .digest("hex");
+
+  const user = await User.findOne({
+    passwordResetToken: hashedPasswordResetToken
+  }).select("+password")
+
+  if(!user || Date.now() > user.passwordResetExpires){
+    throw new AppError(
+      400,
+      "Token is invalid or expired."
+    )
+  }
+
+  user.password = newPassword
+  user.passwordResetExpires = undefined
+  user.passwordResetToken = undefined
+
+  await user.save()
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        id: user._id,
+        username: user.username,
+        email: user.email
+      },
+      "Password reset successfull."
+    )
+  )
+
+});
 
 const uploadAvatar = asyncHandler(async (req, res) => {});
 

@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { userLoginValidator, userRegValidator, userReVerEmailValidator } from "../validators/auth.validators.js";
+import { forgotPasswordValidator, resetPasswordValidator, userLoginValidator, userRegValidator, userReVerEmailValidator } from "../validators/auth.validators.js";
 import validate from "../middlewares/validator.middleware.js";
-import { getProfile, loginUser, logoutUser, registerUser, resendVerifyEmail, verifyEmail } from "../controllers/auth.controller.js";
+import { forgotPassword, getProfile, loginUser, logoutUser, registerUser, resendVerifyEmail, resetPassword, verifyEmail } from "../controllers/auth.controller.js";
 import uploadSingle from "../middlewares/multer.middleware.js";
 import { isLoggedIn } from "../middlewares/auth.middleware.js";
 
@@ -50,12 +50,20 @@ authRouter
     logoutUser
   )
 
-// authRouter
-//   .route("/forgot-password")
-//   .get()
+authRouter
+  .route("/forgot-password")
+  .post(
+    forgotPasswordValidator(),
+    validate,
+    forgotPassword
+  )
 
-// authRouter
-//   .route("/reset-password")
-//   .get()
+authRouter
+  .route("/reset-password/:passwordResetToken")
+  .post(
+    resetPasswordValidator(),
+    validate,
+    resetPassword
+  )
 
 export default authRouter

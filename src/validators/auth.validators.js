@@ -84,8 +84,28 @@ const userLoginValidator = ()=>{
   ]
 }
 
+const forgotPasswordValidator = ()=>{
+  return[
+    oneOf([
+      ...emailValidator("identifier"), 
+      ...usernameValidator("identifier")
+    ], {
+      message: "Identification must be a valid email or username."
+    })
+  ]
+}
+
+const resetPasswordValidator = ()=>{
+  return[
+    ...passwordValidator('newPassword'),
+    ...passwordValidator('confirmNewPassword')
+  ]
+}
+
 export {
   userRegValidator,
   userReVerEmailValidator,
-  userLoginValidator
+  userLoginValidator,
+  forgotPasswordValidator,
+  resetPasswordValidator
 }

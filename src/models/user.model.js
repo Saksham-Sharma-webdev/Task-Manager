@@ -53,10 +53,10 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    forgotPasswordToken: {
+    passwordResetToken: {
       type: String,
     },
-    forgotPasswordExpiry: {
+    passwordResetExpires: {
       type: Date,
     },
     emailVerificationToken: {

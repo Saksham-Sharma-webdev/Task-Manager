@@ -21,7 +21,7 @@ authRouter
   .get(verifyEmail)
 
 authRouter
-  .route("/resend-verification-email")
+  .route("/resend-verification")
   .post(
     userReVerEmailValidator(),
     validate,
@@ -60,7 +60,7 @@ authRouter
 
 authRouter
   .route("/reset-password/:passwordResetToken")
-  .post(
+  .patch(
     resetPasswordValidator(),
     validate,
     resetPassword

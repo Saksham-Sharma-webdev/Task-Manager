@@ -92,10 +92,9 @@ const registerUser = asyncHandler(async (req, res) => {
     await user.save({ validateBeforeSave: false });
   } catch (err) {
     if (profilePicPublicId) {
-      try {
-        await deleteFromCloudinary(profilePicPublicId);
-      } catch (cleanupErr) {
-        console.error("Cloudinary cleanup failed:", cleanupErr.message);
+      const result = await deleteFromCloudinary(profilePicPublicId);
+      if(!result){
+        console.error("Cloudinary cleanup failed");
       }
     }
     throw new AppError(500, "User creation failed.");

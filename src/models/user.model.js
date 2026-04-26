@@ -121,7 +121,7 @@ userSchema.pre("save", async function () {
     this.password = await bcrypt.hash(this.password, 10);
   }
 
-  if (this.isModified("refreshToken")) {
+  if (this.refreshToken && this.isModified("refreshToken")) {
     this.refreshToken = await bcrypt.hash(this.refreshToken, 10);
   }
 });

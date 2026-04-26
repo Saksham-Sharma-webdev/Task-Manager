@@ -20,6 +20,7 @@ const uploadOnCloudinary = async (localFilePath) => {
     
     return response;
   } catch (err) {
+    console.log(`Cloudinary Updation Error: ${err.message}`)
     return null;
   }
 }
@@ -35,7 +36,7 @@ const deleteFromCloudinary = async (publicId, resourceType = "image") => {
 
     return result;
   } catch (error) {
-    console.error("Cloudinary delete error:", error);
+    console.log(`Cloudinary Deletion Error: ${err.message}`)
     return null;
   }
 };

@@ -64,7 +64,22 @@ const deleteAccountValidator = ()=>{
   ]   
 }
 
+const requestChangeEmailValidator = ()=>{
+  return [
+  ...emailValidator("newEmail"),
+  ...passwordValidator("currentPassword")
+]} 
+
+const changePasswordValidator = ()=>{
+  return [
+    ...passwordValidator("currentPassword"),
+    ...passwordValidator("newPassword")
+  ]
+}
+
 export{
   updateProfileValidator,
-  deleteAccountValidator
+  deleteAccountValidator,
+  requestChangeEmailValidator,
+  changePasswordValidator
 }

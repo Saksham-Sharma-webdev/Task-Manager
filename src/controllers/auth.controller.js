@@ -246,6 +246,7 @@ const resendVerifyEmail = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   const verificationUrl = `${env.BASE_URL}/api/v1/auth/verify-email/${unhashedToken}`;
+  console.log(verificationUrl)
 
   let emailInfoId = null;
   try {

@@ -67,16 +67,36 @@ const passwordResetGenContent = (username, passwordResetURL)=>{
   return {
     body: {
       name: username,
-      intro: "Welcome to App! We're very excited to have you on board.",
+      intro: "Welcome to App! You requested to reset password.",
       action: {
-        instructions: "To reset password, Click here: ",
+        instructions: "Click the button below to reset your password. If the button doesn't work, you can copy and paste the token manually.",
         button: {
           color: "#22BC66",
-          text: "Verify your Email",
+          text: "Reset your password: ",
           link: passwordResetURL
         },
       },
-      outro: "If you did not request a password reset, no further action is required on your part."
+      outro: "This link/token will expire in 10 minutes. If you did not request this, please ignore this email."
+    }
+  }
+}
+
+const changeEmailGenContent = (username, newEmail, confirmEmailChangeUrl)=>{
+  return {
+    body: {
+      name: username,
+      intro: `Welcome to App! You requested to change your email to ${newEmail}.`,
+      action: {
+        instructions:
+          "Click the button below to confirm your new email address. If it doesn't work, use the token manually.",
+        button: {
+          color: "#22BC66",
+          text: "Confirm email change: ",
+          link: confirmEmailChangeUrl
+        },
+      },
+      outro:
+        "This request will expire in 10 minutes. If you did not request this change, please secure your account immediately."
     }
   }
 }
@@ -95,5 +115,6 @@ const passwordResetGenContent = (username, passwordResetURL)=>{
 export {
   sendMail,
   emailVerifyGenContent,
-  passwordResetGenContent
+  passwordResetGenContent,
+  changeEmailGenContent
 }

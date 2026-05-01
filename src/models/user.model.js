@@ -69,6 +69,11 @@ const userSchema = new Schema(
       type: String,
       select: false
     },
+    pendingEmail: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    }
   },
   { timestamps: true },
 );

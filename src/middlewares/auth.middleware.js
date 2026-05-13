@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import AppError from "../utils/app-error.js";
 import User from "../models/user.model.js";
 import ms from "ms";
+import Task from "../models/task.model.js";
+import ProjectNote from "../models/note.model.js";
 
 const verifyAccessToken = async (accessToken) => {
   // verify the token ?
@@ -105,8 +107,8 @@ const isLoggedIn = asyncHandler(async (req, res, next) => {
       user = await verifyAccessToken(accessT);
     } catch (err) {
       if (!refreshT || !(err instanceof jwt.TokenExpiredError)) {
-        res.clearCookie("accessToken",cookieOptions);
-        res.clearCookie("refreshToken",cookieOptions);
+        res.clearCookie("accessToken", cookieOptions);
+        res.clearCookie("refreshToken", cookieOptions);
         throw new AppError(401, "Invalid or expired token.");
       }
       const result = await verifyRefreshToken(refreshT);
@@ -125,7 +127,7 @@ const isLoggedIn = asyncHandler(async (req, res, next) => {
 
   if (!user) {
     res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken",cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
     throw new AppError(401, "Invalid or expired token.");
   }
   const data = {
@@ -136,13 +138,67 @@ const isLoggedIn = asyncHandler(async (req, res, next) => {
     isEmailVerified: user.isEmailVerified,
     role: user.role,
     createdAt: user.createdAt,
-    avatarUrl: user.avatar?.url || null
+    avatarUrl: user.avatar?.url || null,
   };
   req.user = data;
 
   next();
 });
 
-const validateProjectPermission = asyncHandler(async (req, res) => {});
+// getting project id from the request
+const getProjectIdFromReq = async (req) => {
+  if (req.params.projectId) {
+    return req.params.projectId;
+  }
+
+  if (req.params.taskId) {
+    const task = await Task.findById(req.params.taskId);
+    if (!task) {
+      throw new AppError(400, "Task not found.");
+    }
+    return task.project;
+  }
+
+  if (req.params.projectNoteId) {
+    const projectNote = await ProjectNote.findById(req.params.projectNoteId);
+    if (!projectNote) {
+      throw new AppError(400, "Task not found.");
+    }
+    return projectNote.project;
+  }
+
+  if (req.params.subtaskId) {
+    const projectNote = await ProjectNote.findById(req.params.projectNoteId);
+    if (!projectNote) {
+      throw new AppError(400, "Task not found.");
+    }
+    return projectNote.project;
+  }
+
+  throw new AppError(400, "Project reference not found.");
+};
+
+// a fn that returns another function
+const validateProjectPermission = (roles = []) =>
+  asyncHandler(async (req, res, next) => {
+    const projectId = await getProjectIdFromReq(req);
+
+    const projectMember = await ProjectMember.findOne({
+      project: projectId,
+      user: req.user.id,
+    });
+    if (!projectMember) {
+      throw new AppError(404, "Project not found or access denied.");
+    }
+    const givenRole = projectMember?.role;
+
+    req.projectRole = givenRole;
+
+    if (roles.length && !roles.includes(givenRole)) {
+      throw new AppError(403, "Don't have permission for this.");
+    }
+
+    next()
+  });
 
 export { isLoggedIn, validateProjectPermission };

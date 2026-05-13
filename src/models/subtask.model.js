@@ -12,6 +12,11 @@ const subtaskSchema = new Schema(
       ref: "Task",
       required: true 
     },
+    project: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true 
+    },
     isCompleted: {
       type: Boolean,
       default: false 

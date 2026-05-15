@@ -3,7 +3,7 @@ import { addMemberToProject, createProject, deleteMember, deleteProject, getProj
 import { isLoggedIn, validateProjectPermission } from "../middlewares/auth.middleware.js";
 import { AvailableUserRoles, UserRoleEnum } from "../constants/constants.js";
 import validate from "../middlewares/validator.middleware.js";
-import { addMemberToProjectValidator, updateProjectValidator } from "../validators/project.validators.js";
+import { addMemberToProjectValidator, createProjectValidator, updateProjectValidator } from "../validators/project.validators.js";
 
 const projectRouter = Router()
 
@@ -32,7 +32,10 @@ projectRouter
     validate,
     updateProject
   )
-  .delete(deleteProject)
+  .delete(
+    validateProjectPermission([UserRoleEnum.ADMIN, UserRoleEnum.PROJECT_ADMIN]),
+    deleteProject
+  )
 
 projectRouter
   .route("/:projectId/members")

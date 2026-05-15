@@ -79,7 +79,7 @@ const registerUser = asyncHandler(async (req, res) => {
         public_id: profilePicPublicId,
       };
     }
-
+    
     user = await User.create(userData);
 
     const tokenData = user.generateTemporaryToken();

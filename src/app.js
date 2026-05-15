@@ -6,6 +6,7 @@ import authRouter from "./routes/auth.routes.js"
 import ApiResponse from "./utils/api-response.js"
 import globalErrorHandler from "./middlewares/error.middleware.js"
 import userRouter from "./routes/user.routes.js"
+import projectRouter from "./routes/project.routes.js"
 
 const app = express()
 
@@ -44,6 +45,7 @@ app.get("/api/v1/healthcheck",(req,res)=>{
 
 app.use("/api/v1/auth",authRouter)
 app.use("/api/v1/user",userRouter)
+app.use("/api/v1/project",projectRouter)
 
 app.use(globalErrorHandler)
 
